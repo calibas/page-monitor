@@ -70,15 +70,6 @@ fn main() {
         let mut parsed2 = String::new();
         walk(0, &dom.document, &mut parsed2);
         println!("Parsed: {}", parsed2 );
-        //walk(0, &dom.document);
-        //println!("parsed_page: {}", &parsed_page);
-        //parsed.with(|parsed_cell| {
-        //    println!("Parsed: {}", *parsed_cell.borrow() );
-            // code that uses odb goes here
-        //});
-        //println!("Parsed: {}", parsed );
-        //println!("HTML length: {}", s.len());
-
     }
 
     if args.pattern == "run" {
@@ -89,7 +80,6 @@ fn main() {
             .expect("Error loading sites.");
         println!("Fetching {} pages", results.len());
         for site in results {
-            parsed.with(|parsed_cell| {
                 //parsed_cell.borrow_mut().clear();
                 let page_string = get_page(&site.url);
                 let page_u8 = page_string.as_bytes();
@@ -138,7 +128,7 @@ fn main() {
                     .set(lastcrawl.eq(&parse2))
                     .execute(&connection)
                     .expect("Error connecting to database.");
-            });
+
         }
     }
 
@@ -163,16 +153,6 @@ fn get_page(url: &str) -> String {
     let mut handle = Easy::new();
     handle.follow_location(true).unwrap();
     handle.url(url).unwrap();
-//    let mut list = List::new();
-    //list.append("Accept: text/html,application/xhtml+xml,application/xml").unwrap();
-    //list.append("Accept-Language: en-US,en").unwrap();
-    //list.append("User-Agent: page_monitor").unwrap();
-    //handle.http_headers(list).unwrap();
-    //handle.perform().unwrap();
-//    handle.header_function(|header| {
-//        print!("header: {}", String::from_utf8_lossy(header));
-//        true
-//    }).unwrap();
     handle.perform().unwrap();
     {
         let mut transfer = handle.transfer();
@@ -182,48 +162,10 @@ fn get_page(url: &str) -> String {
         }).unwrap();
         transfer.perform().unwrap();
     }
-    //println!("{:?}", data);
-    //String::from_utf8(data).unwrap()
     String::from_utf8_lossy(&data).into_owned()
 }
 
-/*
-fn get_page_u8(url: &str) -> Vec<u8> {
-    let mut data = Vec::new();
-    let mut handle = Easy::new();
-    handle.url(url).unwrap();
-//    let mut list = List::new();
-    //list.append("Accept: text/html,application/xhtml+xml,application/xml").unwrap();
-    //list.append("Accept-Language: en-US,en").unwrap();
-    //list.append("User-Agent: page_monitor").unwrap();
-    //handle.http_headers(list).unwrap();
-    //handle.perform().unwrap();
-//    handle.header_function(|header| {
-//        print!("header: {}", String::from_utf8_lossy(header));
-//        true
-//    }).unwrap();
-    handle.perform().unwrap();
-    {
-        let mut transfer = handle.transfer();
-        transfer.write_function(|new_data| {
-            data.extend_from_slice(new_data);
-            Ok(new_data.len())
-        }).unwrap();
-        transfer.perform().unwrap();
-    }
-    //println!("{:?}", data);
-    //String::from_utf8(data).unwrap()
-    data
-}
-*/
-
 fn walk(indent: usize, handle: &Handle, previous: &mut String)  -> String{
-    //let mut result = String::new();
-    //let mut result: String = "No result".to_string();
-    parsed.with(|parsed_cell| {
-        //let result = parsed_cell.borrow_mut();
-        //result.push_str("s");
-        //print!("{}", repeat(" ").take(indent).collect::<String>());
         match handle.data {
             NodeData::Document => {}, //println!("#Document"),
 
@@ -269,7 +211,6 @@ fn walk(indent: usize, handle: &Handle, previous: &mut String)  -> String{
         for child in handle.children.borrow().iter() {
             walk(indent + 4, child, previous);
         }
-    });
     previous.to_owned()
 }
 
