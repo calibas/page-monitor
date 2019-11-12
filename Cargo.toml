@@ -1,0 +1,13 @@
+[package]
+name = "page_monitor"
+version = "0.1.0"
+authors = ["Will Harader <wharader@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+curl = "0.4.19"
+diesel = { version = "1.0.0", features = ["mysql"] }
+diff = "0.1.11"
+dotenv = "0.9.0"
+html5ever = "*"
+structopt = "0.2.14"
