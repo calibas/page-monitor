@@ -9,15 +9,12 @@ extern crate html5ever;
 use std::default::Default;
 //use std::iter::repeat;
 use std::string::String;
-//use std::io;
-use std::cell::RefCell;
 use curl::easy::Easy;
 use structopt::StructOpt;
 use page_monitor::*;
 use page_monitor::models::*;
 use diesel::prelude::*;
 use html5ever::driver::ParseOpts;
-//use html5ever::rcdom::RcDom;
 use html5ever::rcdom::{Handle, NodeData, RcDom};
 use html5ever::tendril::TendrilSink;
 use html5ever::tree_builder::TreeBuilderOpts;
@@ -34,7 +31,7 @@ struct Cli {
     url: String,
 }
 
-thread_local!(pub static parsed: RefCell<String> = RefCell::new(String::from("1")));
+//thread_local!(pub static parsed: RefCell<String> = RefCell::new(String::from("1")));
 
 
 fn main() {
@@ -94,16 +91,11 @@ fn main() {
                     .from_utf8()
                     .read_from(&mut page_u8.clone())
                     .unwrap();
-                //let mut parsed = String::new();
-                //let parsed_page = walk(0, &dom.document);
                 let mut parse2 = String::new();
                 walk(0, &dom.document, &mut parse2);
                 println!("{}: {}", site.id, site.url);
-                //let page_result = get_page(&site.url);
-                //let page_result: String = *parsed_cell.borrow();
                 let mut diff_result = String::new();
 
-                //for diff in diff::lines(&site.lastcrawl, &*parsed_cell.borrow()) {
                 for diff in diff::lines(&site.lastcrawl, &parse2) {
                     match diff {
                         diff::Result::Left(_l) => (),//println!("-{}", l),
@@ -165,28 +157,28 @@ fn get_page(url: &str) -> String {
     String::from_utf8_lossy(&data).into_owned()
 }
 
+#[allow(unused)]
 fn walk(indent: usize, handle: &Handle, previous: &mut String)  -> String{
         match handle.data {
-            NodeData::Document => {}, //println!("#Document"),
+            NodeData::Document => {},
 
             NodeData::Doctype {
                 ref name,
                 ref public_id,
                 ref system_id,
-            } => println!("<!DOCTYPE {} \"{}\" \"{}\">", name, public_id, system_id),
+            } => {
+                // Doctype is currently disabled in TreeBuilderOpts
+                if !name.is_empty() {
+                    println!("<!DOCTYPE {} \"{}\" \"{}\">", name, public_id, system_id)
+                }
+            },
 
             NodeData::Text { ref contents } => {
-
-                //result.push_str("Text");
-                //println!("Parsed: {}", result );
                 previous.push_str(format!("#text: {}\n", escape_default(&contents.borrow())).as_str());
-                //parsed_cell.borrow_mut().push_str(format!("#text: {}\n", escape_default(&contents.borrow())).as_str());
-
             },
 
             NodeData::Comment { ref contents } => {
-                //parsed_cell.borrow_mut().push_str(format!("<!-- {} -->\n", escape_default(contents)).as_str());
-                previous.push_str(format!("<!-- {} -->\n", escape_default(contents)).as_str());
+                //previous.push_str(format!("<!-- {} -->\n", escape_default(contents)).as_str());
             },
 
             NodeData::Element {
@@ -194,14 +186,12 @@ fn walk(indent: usize, handle: &Handle, previous: &mut String)  -> String{
                 ref attrs,
                 ..
             } => {
-                //result.push_str("Element");
-                //parsed_cell.borrow_mut().push_str(format!("<{}", name.local).as_str());
                 previous.push_str(format!("<{}", name.local).as_str());
                 for attr in attrs.borrow().iter() {
-                    //parsed_cell.borrow_mut().push_str(format!(" {}=\"{}\"", attr.name.local, attr.value).as_str());
-                    previous.push_str(format!(" {}=\"{}\"", attr.name.local, attr.value).as_str());
+                    if format!("{}",attr.name.local).as_str() != "data-cacheid" {
+                        previous.push_str(format!(" {}=\"{}\"", attr.name.local, attr.value).as_str());
+                    }
                 }
-                //parsed_cell.borrow_mut().push_str(format!(">\n").as_str());
                 previous.push_str(format!(">\n").as_str());
             },
 
