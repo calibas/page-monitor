@@ -10,7 +10,6 @@ use diesel::prelude::*;
 use diesel::mysql::MysqlConnection;
 
 pub fn establish_connection() -> MysqlConnection {
-    println!("{}", dotenv!("DATABASE_URL"));
     let database_url = dotenv!("DATABASE_URL");
 
     MysqlConnection::establish(&database_url)
