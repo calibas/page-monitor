@@ -4,6 +4,7 @@ pub struct Site {
     pub name: String,
     pub url: String,
     pub lastcrawl: String,
+    pub urls: String,
     pub active: bool,
 }
 
@@ -22,6 +23,7 @@ use super::schema::events;
 pub struct NewEvent<'a> {
     pub site_id: &'a i32,
     pub difference: &'a str,
+    pub event_type: &'a str,
 }
 
 use super::schema::sites;

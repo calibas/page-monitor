@@ -4,6 +4,7 @@ table! {
         name -> Text,
         url -> Text,
         lastcrawl -> Text,
+        urls -> Text,
         active -> Bool,
     }
 }
