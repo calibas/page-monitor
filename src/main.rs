@@ -25,7 +25,12 @@ use structopt::StructOpt;
 
 #[derive(StructOpt)]
 struct Cli {
-    /// The pattern to look for
+    /** Valid arguments:
+      run - Check each page and save results.
+      add - Add new page (req -u).
+      create-tables - Create database tables.
+      list - List all pages.
+      test - Test URL (req -u). */
     pattern: String,
 
     /// The URL to add
@@ -34,7 +39,6 @@ struct Cli {
 }
 
 //thread_local!(pub static parsed: RefCell<String> = RefCell::new(String::from("1")));
-
 
 fn main() {
     use schema::sites::dsl::*;
@@ -85,6 +89,7 @@ fn main() {
     }
 
     if args.pattern == "test" {
+        assert!(&args.url != "", "Requires a URL (use -u)");
         let page_url = args.url;
         let page_string = get_page(&page_url, 0);
         let page_u8 = page_string.as_bytes();
@@ -181,8 +186,6 @@ fn main() {
                 .expect("Error connecting to database.");
         }
     }
-
-//    init_tables(pool.clone());
 
     if args.pattern == "list" {
         let results = sites
