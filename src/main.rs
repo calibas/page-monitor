@@ -9,9 +9,12 @@ extern crate structopt;
 
 use std::default::Default;
 use std::string::String;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use page_monitor::*;
 use page_monitor::models::*;
+use page_monitor::event_log::*;
+use page_monitor::event_log::EventType::*;
 
 use curl::easy::Easy;
 use diesel::prelude::*;
@@ -44,7 +47,7 @@ fn main() {
     use schema::sites::dsl::*;
     //use schema::events::dsl::*;
     use schema::sites;
-    use schema::events;
+    //use schema::events;
 
     let args = Cli::from_args();
     let connection = establish_connection();
@@ -79,8 +82,11 @@ fn main() {
                   `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
                   `name` varchar(512) NOT NULL,
                   `url` varchar(512) NOT NULL,
-                  `lastcrawl` longtext NOT NULL,
+                  `last_crawl` longtext NOT NULL,
+                  `crawl_time` int(11) NOT NULL,
                   `urls` longtext NOT NULL,
+                  `res_code` int(11) NOT NULL,
+                  `res_time` int(11) NOT NULL,
                   `active` tinyint(1) NOT NULL DEFAULT '1'
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;")
             .execute(&connection)
@@ -91,8 +97,8 @@ fn main() {
     if args.pattern == "test" {
         assert!(&args.url != "", "Requires a URL (use -u)");
         let page_url = args.url;
-        let page_string = get_page(&page_url, 0);
-        let page_u8 = page_string.as_bytes();
+        let (page_data, page_code, page_time) = get_page(&connection,&page_url, 0);
+        let page_u8 = page_data.as_bytes();
         let opts = ParseOpts {
             tree_builder: TreeBuilderOpts {
                 drop_doctype: true,
@@ -108,6 +114,7 @@ fn main() {
         let mut new_urls = String::new();
         walk(0, &dom.document, &mut walked, &mut new_urls);
         println!("Parsed: {}", walked);
+        println!("{} {} {}", page_code, page_time, page_url);
     }
 
     if args.pattern == "run" {
@@ -119,8 +126,8 @@ fn main() {
         println!("Fetching {} pages", results.len());
         for site in results {
             println!("{}: {}", site.id, site.url);
-            let page_string = get_page(&site.url, site.id);
-            let page_u8 = page_string.as_bytes();
+            let (page_data, page_code, page_time) = get_page(&connection, &site.url, site.id);
+            let page_u8 = page_data.as_bytes();
             let opts = ParseOpts {
                 tree_builder: TreeBuilderOpts {
                     drop_doctype: true,
@@ -138,7 +145,7 @@ fn main() {
 
             // Check for HTML differences
             let mut diff_result = String::new();
-            for diff in diff::lines(&site.lastcrawl, &parse2) {
+            for diff in diff::lines(&site.last_crawl, &parse2) {
                 match diff {
                     diff::Result::Left(_l) => (),//println!("-{}", l),
                     diff::Result::Both(_l, _) => (),//println!(" {}", l),
@@ -147,41 +154,51 @@ fn main() {
             }
 
             if !diff_result.is_empty() {
-                let new_event = NewEvent {
-                    site_id: &site.id,
-                    difference: &diff_result,
-                    event_type: "html_change",
-                };
-                diesel::insert_into(events::table)
-                    .values(&new_event)
-                    .execute(&connection)
-                    .expect("Error saving new event");
+                log_event(&connection, &diff_result,site.id as i32, HTML_CHANGE);
+//                let new_event = NewEvent {
+//                    site_id: &site.id,
+//                    difference: &diff_result,
+//                    event_type: "html_change",
+//                };
+//                diesel::insert_into(events::table)
+//                    .values(&new_event)
+//                    .execute(&connection)
+//                    .expect("Error saving new event");
             }
 
             //Check for link differences
-            let mut diff_result2 = String::new();
+            let mut diff_link = String::new();
             for diff2 in diff::lines(&site.urls, &new_urls) {
                 match diff2 {
-                    diff::Result::Left(_l) => (),//println!("-{}", l),
+                    diff::Result::Left(_l) => (diff_link.push_str(&format!("-{}\n", _l))),//println!("-{}", l),
                     diff::Result::Both(_l, _) => (),//println!(" {}", l),
-                    diff::Result::Right(_r) => diff_result2.push_str(&format!("+{}\n", _r))//println!("+{}", r)
+                    diff::Result::Right(_r) => diff_link.push_str(&format!("+{}\n", _r))//println!("+{}", r)
                 }
             }
 
-            if !diff_result2.is_empty() {
-                let new_event = NewEvent {
-                    site_id: &site.id,
-                    difference: &diff_result2,
-                    event_type: "link_change",
-                };
-                diesel::insert_into(events::table)
-                    .values(&new_event)
-                    .execute(&connection)
-                    .expect("Error saving new event");
+            if !diff_link.is_empty() {
+                log_event(&connection, &diff_link,site.id as i32, LINK_CHANGE);
+//                let new_event = NewEvent {
+//                    site_id: &site.id,
+//                    difference: &diff_link,
+//                    event_type: "link_change",
+//                };
+//                diesel::insert_into(events::table)
+//                    .values(&new_event)
+//                    .execute(&connection)
+//                    .expect("Error saving new event");
             }
 
+            let fetch_time = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time travel detected.").as_secs() as i64;
+
             diesel::update(sites.find(site.id))
-                .set((lastcrawl.eq(&parse2), urls.eq(new_urls)))
+                .set((
+                    last_crawl.eq(&parse2),
+                    crawl_time.eq(fetch_time),
+                    urls.eq(new_urls),
+                    res_code.eq(page_code),
+                    res_time.eq(page_time)
+                ))
                 .execute(&connection)
                 .expect("Error connecting to database.");
         }
@@ -200,18 +217,24 @@ fn main() {
     }
 }
 
-fn get_page(url: &str, site_id: i32) -> String {
+fn get_page(conn: &MysqlConnection, url: &str, site_id: i32) -> (String, i32, i64 ) {
     let mut data = Vec::new();
     let mut handle = Easy::new();
+    let mut res_code :u32 = 0;
+    let mut res_time :u128 = 0;
     handle.follow_location(true).unwrap();
     handle.url(url).unwrap();
     match handle.perform() {
         Ok(_f) =>
             {
-                let res_code = handle.response_code().unwrap();
-                println!("{} {}", res_code, site_id);
+                res_code = handle.response_code().unwrap();
+                res_time = handle.total_time().unwrap().as_millis();
+                println!("{} {}", res_code, res_time);
                 if res_code != 200 {
-                    log_error_event(&format!("Bad response {}",res_code),site_id);
+                    log_event(conn, &format!("Bad response ({})",res_code),site_id, ERROR);
+                }
+                if res_time > 2000 {
+                    log_event(conn, &format!("Slow response time ({})",res_time),site_id, WARNING);
                 }
                 let mut transfer = handle.transfer();
                 transfer.write_function(|new_data| {
@@ -222,10 +245,11 @@ fn get_page(url: &str, site_id: i32) -> String {
             },
         Err(e) => {
             println!("Connection error \n{:?}", e);   //handled error
-            log_error_event(&format!("{}",e),site_id);
+            //log_error_event(&format!("Connection error {}",e),site_id);
+            log_event(conn, &format!("Connection error ({})",e), site_id, ERROR );
         }
     }
-    String::from_utf8_lossy(&data).into_owned()
+    (String::from_utf8_lossy(&data).into_owned(), res_code as i32, res_time as i64 )
 }
 
 #[allow(unused)]
@@ -298,22 +322,21 @@ pub fn in_array(s: &str, arr: &Vec<&str>) -> bool {
 
 fn text_regex(text: &str) -> String {
     lazy_static! {
-        //static ref RE: Regex = Regex::new(r#"(theme_token|cx|view_dom_id|views_dom_id|key)(\\":\\")*[\w|:|-]{8,}"#).unwrap();
         static ref RE: Regex = Regex::new(r#"\[CDATA\[.*?\]\]"#).unwrap();
     }
     RE.replace_all(text, "").into_owned()
 }
 
-fn log_error_event(e: &str, site_id: i32) {
-    use schema::events;
-    let new_event = NewEvent {
-        site_id: &site_id,
-        difference: e,
-        event_type: "error",
-    };
-    let connection = establish_connection();
-    diesel::insert_into(events::table)
-        .values(new_event)
-        .execute(&connection)
-        .expect("Error saving new event");
-}
+//fn log_error_event(e: &str, site_id: i32) {
+//    use schema::events;
+//    let new_event = NewEvent {
+//        site_id: &site_id,
+//        difference: e,
+//        event_type: "error",
+//    };
+//    let connection = establish_connection();
+//    diesel::insert_into(events::table)
+//        .values(new_event)
+//        .execute(&connection)
+//        .expect("Error saving new event");
+//}

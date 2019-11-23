@@ -3,8 +3,11 @@ pub struct Site {
     pub id: i32,
     pub name: String,
     pub url: String,
-    pub lastcrawl: String,
+    pub last_crawl: String,
+    pub crawl_time: i64,
     pub urls: String,
+    pub res_code: i32,
+    pub res_time: i64,
     pub active: bool,
 }
 
@@ -12,7 +15,7 @@ pub struct Site {
 pub struct Event {
     pub id: i32,
     pub site_id: i32,
-    pub timestamp: i64,
+    pub timestamp: String,
     pub difference: String,
     pub event_type: String,
 }

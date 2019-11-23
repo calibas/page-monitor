@@ -5,6 +5,7 @@ extern crate dotenv_codegen;
 
 pub mod schema;
 pub mod models;
+pub mod event_log;
 
 use diesel::prelude::*;
 use diesel::mysql::MysqlConnection;
