@@ -1,0 +1,24 @@
+[package]
+name = "pm_rcdom"
+version = "0.1.0"
+authors = [ "The html5ever Project Developers" ]
+license = "MIT / Apache-2.0"
+repository = "https://github.com/servo/html5ever"
+description = "Basic, unsupported DOM structure for use by tests in html5ever/xml5ever"
+readme = "README.md"
+documentation = "https://docs.rs/markup5ever_rcdom"
+categories = [ "parser-implementations", "web-programming" ]
+edition = "2018"
+publish = false
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+tendril = "0.4"
+html5ever = "0.25"
+markup5ever="0.10"
+
+[dev-dependencies]
+serde_json = "1.0"
+rustc-test = "0.3"

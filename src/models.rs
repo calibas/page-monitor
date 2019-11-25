@@ -15,7 +15,7 @@ pub struct Site {
 pub struct Event {
     pub id: i32,
     pub site_id: i32,
-    pub timestamp: String,
+    pub event_time: i64,
     pub difference: String,
     pub event_type: String,
 }
@@ -25,6 +25,7 @@ use super::schema::events;
 #[table_name="events"]
 pub struct NewEvent<'a> {
     pub site_id: &'a i32,
+    pub event_time: &'a i64,
     pub difference: &'a str,
     pub event_type: &'a str,
 }

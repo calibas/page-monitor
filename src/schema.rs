@@ -16,7 +16,7 @@ table! {
     events (id) {
         id -> Integer,
         site_id -> Integer,
-        timestamp -> Text,
+        event_time -> BigInt,
         difference -> Text,
         event_type -> Text,
     }

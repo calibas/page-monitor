@@ -2,6 +2,8 @@ extern crate curl;
 extern crate diesel;
 extern crate diff;
 extern crate html5ever;
+extern crate pm_rcdom;
+extern crate markup5ever;
 #[macro_use]
 extern crate lazy_static;
 extern crate regex;
@@ -19,7 +21,7 @@ use page_monitor::event_log::EventType::*;
 use curl::easy::Easy;
 use diesel::prelude::*;
 use html5ever::driver::ParseOpts;
-use html5ever::rcdom::{Handle, NodeData, RcDom};
+use pm_rcdom::{Handle, NodeData, RcDom};
 use html5ever::tendril::TendrilSink;
 use html5ever::tree_builder::TreeBuilderOpts;
 use html5ever::parse_document;
@@ -72,6 +74,7 @@ fn main() {
                   `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
                   `site_id` int(11) NOT NULL,
                   `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                  `event_time` int(11) NOT NULL,
                   `difference` longtext NOT NULL,
                   `event_type` varchar(255) NOT NULL
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;")
@@ -271,8 +274,6 @@ fn walk(indent: usize, handle: &Handle, previous: &mut String, urls: &mut String
         NodeData::Text { ref contents } => {
             let text = format!("# {}\n", escape_default(&contents.borrow())).as_str().to_owned();
             //let re = Regex::new(r#"(theme_token|cx|view_dom_id|views_dom_id|key)(\\":\\")*[\w|:|-]{8,}"#).unwrap();
-            //let result = re.replace_all(&text, "").into_owned();
-            //previous.push_str(&result);
             previous.push_str(&text_regex(&text));
         }
 

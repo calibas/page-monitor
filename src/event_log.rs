@@ -1,6 +1,7 @@
 use diesel::prelude::*;
 use super::models::*;
 use std::fmt;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug)]
 #[allow(non_camel_case_types)]
@@ -20,8 +21,10 @@ impl fmt::Display for EventType {
 
 pub fn log_event(conn: &MysqlConnection, e: &str, site_id: i32, etype: EventType) {
     use super::schema::events;
+    let fetch_time = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time travel detected.").as_secs() as i64;
     let new_event = NewEvent {
         site_id: &site_id,
+        event_time: &fetch_time,
         difference: e,
         event_type: &etype.to_string().to_lowercase(),
     };
