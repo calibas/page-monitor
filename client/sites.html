@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Page status</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel='stylesheet' href='style.css'>
+</head>
+<style>
+    body {
+        background-color:#eee;
+    }
+    .site-active {
+        text-align: right;
+        color: #3ecc3e;
+    }
+    .site-not-active {
+        color: #79000c;
+    }
+    .site-footer {
+        font-size:78%;
+    }
+    .site-entry .card-header {
+        text-decoration:underline;
+    }
+    .fade-enter-active, .fade-leave-active {
+        transition: opacity .3s;
+    }
+    .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+        opacity: 0;
+    }
+</style>
+<body>
+<div class="d-flex flex-column flex-md-row align-items-center p-1 px-md-4 mb-3 bg-white border-bottom box-shadow">
+    <nav class="my-2 ml-auto my-md-0 mr-md-3">
+        <a class="p-2" href="#">Home</a>
+        <a class="p-2" href="#">Dashboard</a>
+        <a class="p-2" href="#">Logout</a>
+    </nav>
+</div>
+<div class="container-fluid">
+    <div id="app">
+        <transition-group name="fade" tag="div" class="row" id="main-area">
+            <div class="col-md-12" v-if="sites.length < 1">
+                <div class="spinner-border text-info" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </div>
+            <sites
+                    v-for="site in sites"
+                    v-bind:site="site"
+                    v-bind:key="site.id"
+            ></sites>
+        </transition-group>
+    </div>
+</div>
+</body>
+<script>
+    Vue.component('sites', {
+        props: ['site'],
+        methods: {
+            timeSince: function (date, event) {
+                let seconds = Math.floor((new Date() - date * 1000) / 1000);
+                //var interval = Math.floor(seconds / 31536000);
+                // if (interval > 1) {
+                //     return interval + " years";
+                // }
+                // interval = Math.floor(seconds / 2592000);
+                // if (interval > 1) {
+                //     return interval + " months";
+                // }
+                let interval = Math.floor(seconds / 86400);
+                if (interval > 1) {
+                    return interval + " days";
+                }
+                interval = Math.floor(seconds / 3600);
+                if (interval > 1) {
+                    return interval + " hours";
+                }
+                interval = Math.floor(seconds / 60);
+                if (interval > 1) {
+                    return interval + " minutes";
+                }
+                return Math.floor(seconds) + " seconds";
+            },
+            timeSince2: function (date, event) {
+                let seconds = Math.floor((new Date() - date * 1000) / 1000);
+                let value = seconds;
+                let unit = "second";
+                if (seconds >= 31536000) {
+                    value = Math.floor(seconds / 31536000);
+                    unit = "year";
+                } else if (seconds >= 86400) {
+                    value = Math.floor(seconds / 86400);
+                    unit = "day";
+                } else if (seconds >= 3600) {
+                    value = Math.floor(seconds / 3600);
+                    unit = "hour";
+                } else if (seconds >= 60) {
+                    value = Math.floor(seconds / 60);
+                    unit = "minute";
+                }
+                if (value != 1)
+                    unit = unit + "s";
+                return value + " " + unit
+            }
+        },
+        template: '<div class="col-md-6 site-entry"><div class="card mb-4">' +
+            '<h6 class="card-header bg-info text-white">{{ site.url }}</h6>' +
+            '<div class="card-body"><div class="row">' +
+            '<div class="col-12">Status Code: ' +
+            '<span class="badge badge-success" v-if="site.res_code == 200">OK (200)</span>' +
+            '<span class="badge badge-danger" v-else="">Error ({{ site.res_code }})</span>' +
+            '</div>' +
+            '<div class="col-12 mb-4">Response time: {{ site.res_time }} ms</div>' +
+            '<div class="col-8 site-footer">{{ timeSince2(site.crawl_time) }} ago</div>' +
+            '<div class="site-active col-4 site-footer">' +
+            '<span v-if="site.active">active</span>' +
+            '<span class="site-not-active" v-else="">disabled</span>' +
+            '</div></div>' +
+            '</div></div></div>'
+    });
+    let app = new Vue({
+        el: '#app',
+        data: {
+            sites: []
+        },
+        methods: {
+            fetchSiteList: function (event) {
+                fetch('http://localhost/page-monitor/sites.php')
+                    .then(res => res.json())
+                    .then((out) => {
+                        this.sites = out;
+                    }).catch(err => { throw err });
+            }
+        },
+        mounted() {
+            this.fetchSiteList();
+            setInterval(() => {
+                this.fetchSiteList();
+            }, 60 * 1000);
+        }
+    });
+</script>
+</html>

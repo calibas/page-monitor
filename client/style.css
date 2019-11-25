@@ -1,0 +1,69 @@
+html, body, div, span, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+abbr, address, cite, code,
+del, dfn, em, img, ins, kbd, q, samp,
+small, strong, sub, sup, var,
+b, i,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section, summary,
+time, mark, audio, video {
+    margin:0;
+    padding:0;
+    border:0;
+    outline:0;
+    font-size:100%;
+    vertical-align:baseline;
+    background:transparent;
+}
+
+.values {
+    width:100%;
+    border-collapse: collapse;
+}
+
+.values td, th {
+    padding: 6px;
+    border: 1px solid #ccc;
+}
+
+.values th {
+    background-color:darkBlue;
+    color:white;
+}
+
+.values td {
+    max-width:500px;
+    white-space: pre;
+}
+.values .event-site {
+    max-width: 250px;
+    white-space: normal;
+    font-size: 80%;
+    word-break: break-all;
+}
+.values .event-time {
+    font-size: 80%;
+}
+.values .event-diff {
+    overflow: auto;
+    max-height: 200px;
+}
+
+.values .event-diff-td {
+    background-color:#FFF;
+}
+
+.values .event-type-error {
+    background-color: #fbdada;
+}
+
+.event-type-html_change {
+    background-color: #d9ffd9;
+}
+
+.event-type-link_change {
+    background-color: #ffffd3;
+}
