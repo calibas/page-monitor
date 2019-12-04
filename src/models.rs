@@ -35,4 +35,6 @@ use super::schema::sites;
 #[table_name="sites"]
 pub struct NewSite<'a> {
     pub url: &'a str,
+    pub last_crawl: &'a str,
+    pub urls: &'a str,
 }

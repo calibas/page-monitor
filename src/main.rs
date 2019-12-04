@@ -58,6 +58,8 @@ fn main() {
         assert!(&args.url != "", "Requires a URL (use -u)");
         let new_site = NewSite {
             url: &args.url,
+            urls: "",
+            last_crawl: "",
         };
         diesel::insert_into(sites::table)
             .values(&new_site)
