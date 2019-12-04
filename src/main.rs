@@ -73,7 +73,6 @@ fn main() {
         diesel::sql_query("CREATE TABLE `events` (
                   `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
                   `site_id` int(11) NOT NULL,
-                  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
                   `event_time` int(11) NOT NULL,
                   `difference` longtext NOT NULL,
                   `event_type` varchar(255) NOT NULL
@@ -83,14 +82,14 @@ fn main() {
         println!("events table created");
         diesel::sql_query("CREATE TABLE `sites` (
                   `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                  `name` varchar(512) NOT NULL,
+                  `name` varchar(512) NOT NULL DEFAULT '',
                   `url` varchar(512) NOT NULL,
-                  `last_crawl` longtext NOT NULL,
-                  `crawl_time` int(11) NOT NULL,
-                  `urls` longtext NOT NULL,
-                  `res_code` int(11) NOT NULL,
-                  `res_time` int(11) NOT NULL,
-                  `active` tinyint(1) NOT NULL DEFAULT '1'
+                  `last_crawl` longtext NOT NULL DEFAULT '',
+                  `crawl_time` int(11) NOT NULL DEFAULT 0,
+                  `urls` longtext NOT NULL DEFAULT '',
+                  `res_code` int(11) NOT NULL DEFAULT 0,
+                  `res_time` int(11) NOT NULL DEFAULT 0,
+                  `active` tinyint(1) NOT NULL DEFAULT 1
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;")
             .execute(&connection)
             .expect("Error creating table sites.");
