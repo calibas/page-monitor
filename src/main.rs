@@ -84,9 +84,9 @@ fn main() {
                   `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
                   `name` varchar(512) NOT NULL DEFAULT '',
                   `url` varchar(512) NOT NULL,
-                  `last_crawl` longtext NOT NULL DEFAULT '',
+                  `last_crawl` longtext NOT NULL,
                   `crawl_time` int(11) NOT NULL DEFAULT 0,
-                  `urls` longtext NOT NULL DEFAULT '',
+                  `urls` longtext NOT NULL,
                   `res_code` int(11) NOT NULL DEFAULT 0,
                   `res_time` int(11) NOT NULL DEFAULT 0,
                   `active` tinyint(1) NOT NULL DEFAULT 1
