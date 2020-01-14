@@ -1,14 +1,28 @@
 <?php
+// respond to preflights
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    // return only the headers and not the content
+    // only allow CORS if we're doing a GET - i.e. no saving for now.
+    if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']) &&
+        $_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD'] == 'POST') {
+      header('Access-Control-Allow-Origin: *');
+      header('Access-Control-Allow-Headers: X-Requested-With, Content-Type');
+    }
+    die();
+}
+
+$json_data = json_decode(file_get_contents('php://input'), true);
 // Check for valid site_id and convert to int for DB query
-if (!array_key_exists('site_id', $_POST)) {
+//if (!array_key_exists('site_id', $_POST)) {
+if (!array_key_exists('site_id', $json_data)) {
     http_response_code(400);
     die("site_id required");
 }
-if (!is_numeric($_POST["site_id"])) {
+if (!is_numeric($json_data["site_id"])) {
     http_response_code (400 );
     die("invalid site_id");
 }
-$site_id = intval($_POST["site_id"]);
+$site_id = intval($json_data["site_id"]);
 
 // Database setup
 $db_host = 'localhost:3306';
@@ -25,8 +39,8 @@ if (!$site) {
     http_response_code (400 );
     die("site_id not found");
 }
-
-$events_query = 'SELECT id, event_time, difference, event_type  FROM events WHERE site_id =' . $site_id;
+$sevenDaysAgo = strtotime("-7 days");
+$events_query = 'SELECT id, event_time, difference, event_type  FROM events WHERE site_id =' . $site_id . ' AND event_time > ' . $sevenDaysAgo . ' ORDER BY id DESC';
 $site['events'] = mysqli_query($db_connection, $events_query, 0 )->fetch_all(MYSQLI_ASSOC);
 
 // Prepare output
