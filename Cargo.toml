@@ -5,7 +5,7 @@ authors = ["Will Harader <wharader@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-curl = "0.4.25"
+curl = "0.4.43"
 diesel = { version = "1.0.0", features = ["mysql"] }
 diff = "0.1.11"
 dotenv = "0.15"
